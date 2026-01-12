@@ -123,19 +123,25 @@ class RamProvider extends AbstractProvider implements ProviderInterface
 
         $statusCode = $response->getStatusCode();
         $body = (string) $response->getBody();
-        $data = json_decode($body, true);
 
-        // Handle redirects (302) - authentication failed or endpoint misconfigured
-        if ($statusCode >= 300 && $statusCode < 400) {
-            $location = $response->getHeader('Location')[0] ?? 'unknown';
-            throw new \Exception("RAM OAuth failed - redirected to: {$location}");
+        // Handle non-success HTTP responses
+        if ($statusCode >= 300) {
+            \Log::error('RAM OAuth HTTP error', ['status' => $statusCode]);
+            throw new \Exception('RAM OAuth error [HTTP]: Authentication failed');
+        }
+
+        // Validate JSON response
+        $data = json_decode($body, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            \Log::error('RAM OAuth invalid JSON response', ['error' => json_last_error_msg()]);
+            throw new \Exception('RAM OAuth error [PARSE]: Invalid response format');
         }
 
         // Handle WoWonder error response
         if (isset($data['status']) && $data['status'] != 200) {
-            $errorMsg = $data['errors']['message'] ?? 'Unknown error';
-            $errorCode = $data['errors']['error_code'] ?? 'N/A';
-            throw new \Exception("RAM OAuth error [{$errorCode}]: {$errorMsg}");
+            $errorCode = $data['errors']['error_code'] ?? 'UNKNOWN';
+            \Log::warning('RAM OAuth API error', ['code' => $errorCode]);
+            throw new \Exception("RAM OAuth error [{$errorCode}]: Authentication failed");
         }
 
         // Transform WoWonder response to Socialite format
@@ -183,7 +189,15 @@ class RamProvider extends AbstractProvider implements ProviderInterface
             ],
         ]);
 
-        return json_decode($response->getBody(), true);
+        $body = (string) $response->getBody();
+        $data = json_decode($body, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            \Log::error('RAM OAuth user data invalid JSON', ['error' => json_last_error_msg()]);
+            throw new \Exception('Failed to retrieve user data from RAM');
+        }
+
+        return $data;
     }
 
     /**
