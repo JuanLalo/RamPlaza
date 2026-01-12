@@ -52,7 +52,11 @@ class RamAutoLogin
 
         // Customer not found - redirect to OAuth for auto-provisioning #191
         if (! $socialAccount || ! $socialAccount->customer) {
-            session(['ram_auto_provision_redirect' => $this->getCleanUrl($request)]);
+            $redirectUrl = $this->getCleanUrl($request);
+            // Only store redirect URL if it belongs to our domain (prevent session fixation)
+            if ($this->isValidInternalUrl($redirectUrl)) {
+                session(['ram_auto_provision_redirect' => $redirectUrl]);
+            }
             return redirect()->route('customer.social-login.index', 'ram');
         }
 
@@ -108,8 +112,25 @@ class RamAutoLogin
     protected function isValidTimestamp(string $timestamp): bool
     {
         $maxAge = 15 * 60;
+        $ts = (int) $timestamp;
+        $age = time() - $ts;
 
-        return (time() - (int) $timestamp) <= $maxAge;
+        // Timestamp must be positive, not in the future, and within max age
+        return $ts > 0 && $age >= 0 && $age <= $maxAge;
+    }
+
+    /**
+     * Validate URL belongs to our application domain (prevents open redirect)
+     */
+    protected function isValidInternalUrl(string $url): bool
+    {
+        $parsed = parse_url($url);
+        if (!$parsed || empty($parsed['host'])) {
+            return false;
+        }
+
+        $appHost = parse_url(config('app.url'), PHP_URL_HOST);
+        return $parsed['host'] === $appHost;
     }
 
     /**
