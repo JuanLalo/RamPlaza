@@ -46,17 +46,21 @@ class LoginController extends Controller
         try {
             return Socialite::driver($provider)->redirect();
         } catch (ConnectException $e) {
-            \Log::error('Social login connection error: ' . $e->getMessage(), [
+            $errorId = uniqid('social_');
+            \Log::error('Social login connection timeout', [
+                'error_id' => $errorId,
                 'provider' => $provider,
             ]);
             session()->flash('error', 'No se pudo conectar con el servidor de autenticación. Por favor intenta más tarde.');
             return redirect()->route('shop.customer.session.index');
         } catch (\Exception $e) {
-            \Log::error('Social login redirect error: ' . $e->getMessage(), [
+            $errorId = uniqid('social_');
+            \Log::error('Social login redirect error', [
+                'error_id' => $errorId,
                 'provider' => $provider,
-                'exception' => $e
+                'error_class' => get_class($e),
             ]);
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', 'Error al iniciar sesión. Por favor intenta de nuevo.');
             return redirect()->route('shop.customer.session.index');
         }
     }
@@ -72,16 +76,20 @@ class LoginController extends Controller
         try {
             $user = Socialite::driver($provider)->user();
         } catch (ConnectException $e) {
-            \Log::error('Social login connection error: ' . $e->getMessage(), [
+            $errorId = uniqid('social_');
+            \Log::error('Social login callback connection timeout', [
+                'error_id' => $errorId,
                 'provider' => $provider,
             ]);
             session()->flash('error', 'No se pudo conectar con Red Activa México. Por favor intenta más tarde.');
             return redirect()->route('shop.customer.session.index');
         } catch (\Exception $e) {
-            \Log::error('Social login callback error: ' . $e->getMessage(), [
+            $errorId = uniqid('social_');
+            // Log without sensitive data - use error_id to correlate with detailed logs if needed
+            \Log::error('Social login callback error', [
+                'error_id' => $errorId,
                 'provider' => $provider,
-                'exception' => $e,
-                'trace' => $e->getTraceAsString()
+                'error_class' => get_class($e),
             ]);
 
             // Parse RAM error code from message and map to friendly message #191
