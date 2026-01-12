@@ -82,10 +82,11 @@ class SessionController extends Controller
             Event::dispatch('customer.after.logout', $id);
         }
 
+        $ramBaseUrl = $this->getRamBaseUrl();
+
         // Handle redirect parameter from cross-app logout sync #191
         $redirect = request()->query('redirect');
         if ($redirect && filter_var($redirect, FILTER_VALIDATE_URL)) {
-            $ramBaseUrl = core()->getConfigData('customer.settings.social_login.ram_base_url');
             // Only allow redirects to configured RAM URL for security (strict host match)
             if ($ramBaseUrl) {
                 $redirectHost = parse_url($redirect, PHP_URL_HOST);
@@ -98,12 +99,25 @@ class SessionController extends Controller
         }
 
         // Sync logout with RAM if configured and not already a sync request #191
-        $ramBaseUrl = core()->getConfigData('customer.settings.social_login.ram_base_url');
         if ($ramBaseUrl && !$redirect) {
             $returnUrl = route('shop.home.index');
             return redirect($ramBaseUrl . '/logout?redirect=' . urlencode($returnUrl));
         }
 
         return redirect()->route('shop.home.index');
+    }
+
+    /**
+     * Get RAM base URL from database config or .env fallback #191
+     */
+    protected function getRamBaseUrl(): ?string
+    {
+        $baseUrl = core()->getConfigData('customer.settings.social_login.ram_base_url');
+
+        if (empty($baseUrl)) {
+            $baseUrl = config('services.ram.base_url');
+        }
+
+        return $baseUrl ? rtrim($baseUrl, '/') : null;
     }
 }

@@ -35,7 +35,8 @@
 
             {{-- RAM Profile Link #191 - passwords and profile managed in RAM --}}
             @php
-                $ramBaseUrl = core()->getConfigData('customer.settings.social_login.ram_base_url');
+                $ramBaseUrl = core()->getConfigData('customer.settings.social_login.ram_base_url')
+                    ?: config('services.ram.base_url');
             @endphp
             @if($ramBaseUrl)
                 <a
