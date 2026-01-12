@@ -86,9 +86,14 @@ class SessionController extends Controller
         $redirect = request()->query('redirect');
         if ($redirect && filter_var($redirect, FILTER_VALIDATE_URL)) {
             $ramBaseUrl = core()->getConfigData('customer.settings.social_login.ram_base_url');
-            // Only allow redirects to configured RAM URL for security
-            if ($ramBaseUrl && str_contains($redirect, parse_url($ramBaseUrl, PHP_URL_HOST))) {
-                return redirect($redirect);
+            // Only allow redirects to configured RAM URL for security (strict host match)
+            if ($ramBaseUrl) {
+                $redirectHost = parse_url($redirect, PHP_URL_HOST);
+                $ramHost = parse_url($ramBaseUrl, PHP_URL_HOST);
+                // Strict comparison: host must match exactly (prevents subdomain attacks)
+                if ($redirectHost && $ramHost && $redirectHost === $ramHost) {
+                    return redirect($redirect);
+                }
             }
         }
 
