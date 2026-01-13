@@ -75,12 +75,49 @@ class SessionController extends Controller
      */
     public function destroy()
     {
-        $id = auth()->guard('customer')->user()->id;
+        $id = auth()->guard('customer')->user()?->id;
 
-        auth()->guard('customer')->logout();
+        if ($id) {
+            auth()->guard('customer')->logout();
+            Event::dispatch('customer.after.logout', $id);
+        }
 
-        Event::dispatch('customer.after.logout', $id);
+        $ramBaseUrl = $this->getRamBaseUrl();
+
+        // Handle redirect parameter from cross-app logout sync #191
+        $redirect = request()->query('redirect');
+        if ($redirect && filter_var($redirect, FILTER_VALIDATE_URL)) {
+            // Only allow redirects to configured RAM URL for security (strict host match)
+            if ($ramBaseUrl) {
+                $redirectHost = parse_url($redirect, PHP_URL_HOST);
+                $ramHost = parse_url($ramBaseUrl, PHP_URL_HOST);
+                // Strict comparison: host must match exactly (prevents subdomain attacks)
+                if ($redirectHost && $ramHost && $redirectHost === $ramHost) {
+                    return redirect($redirect);
+                }
+            }
+        }
+
+        // Sync logout with RAM if configured and not already a sync request #191
+        if ($ramBaseUrl && !$redirect) {
+            $returnUrl = route('shop.home.index');
+            return redirect($ramBaseUrl . '/logout?redirect=' . urlencode($returnUrl));
+        }
 
         return redirect()->route('shop.home.index');
+    }
+
+    /**
+     * Get RAM base URL from database config or .env fallback #191
+     */
+    protected function getRamBaseUrl(): ?string
+    {
+        $baseUrl = core()->getConfigData('customer.settings.social_login.ram_base_url');
+
+        if (empty($baseUrl)) {
+            $baseUrl = config('services.ram.base_url');
+        }
+
+        return $baseUrl ? rtrim($baseUrl, '/') : null;
     }
 }

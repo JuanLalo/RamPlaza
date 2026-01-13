@@ -6,6 +6,7 @@ services:
             args:
                 WWWGROUP: '${WWWGROUP}'
         image: sail-8.3/app
+        container_name: ramplaza-dev-app
         extra_hosts:
             - 'host.docker.internal:host-gateway'
         ports:
@@ -21,6 +22,7 @@ services:
             - '.:/var/www/html'
         networks:
             - sail
+            - ram-network
         depends_on:
             - mysql
             - redis
@@ -107,6 +109,11 @@ services:
 networks:
     sail:
         driver: bridge
+    # Red compartida con RAM (para comunicación entre apps)
+    # RAM debe iniciarse primero para crear esta red
+    ram-network:
+        external: true
+        name: ram-network
 volumes:
     sail-mysql:
         driver: local
