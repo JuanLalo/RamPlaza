@@ -1,6 +1,6 @@
 @php
     // Capture intended URL to pass through OAuth flow #191
-    // Priority: session intended URL > previous URL (excluding login pages) > home
+    // Priority: session intended URL > previous URL (excluding login pages) > null
     $intendedUrl = session('url.intended');
     if (!$intendedUrl) {
         $previousUrl = url()->previous();

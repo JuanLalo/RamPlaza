@@ -100,7 +100,22 @@
                 <p class="ram-welcome-subtitle">Inicia sesion con tu cuenta de RedActivaMexico</p>
 
                 {{-- Single OAuth Button --}}
-                <a href="{{ route('customer.social-login.index', 'ram') }}" class="ram-oauth-btn">
+                @php
+                    // Capture intended URL to pass through OAuth flow #191
+                    // Priority: session intended URL > previous URL (excluding login pages) > null
+                    $intendedUrl = session('url.intended');
+                    if (!$intendedUrl) {
+                        $previousUrl = url()->previous();
+                        if ($previousUrl && !str_contains($previousUrl, '/customer/session') && !str_contains($previousUrl, '/customer/register')) {
+                            $intendedUrl = $previousUrl;
+                        }
+                    }
+                    $loginUrl = route('customer.social-login.index', 'ram');
+                    if ($intendedUrl) {
+                        $loginUrl .= '?redirect=' . urlencode($intendedUrl);
+                    }
+                @endphp
+                <a href="{{ $loginUrl }}" class="ram-oauth-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
                         <polyline points="10 17 15 12 10 7"></polyline>
