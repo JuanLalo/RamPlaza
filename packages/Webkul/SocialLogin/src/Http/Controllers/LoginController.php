@@ -43,6 +43,18 @@ class LoginController extends Controller
      */
     public function redirectToProvider($provider)
     {
+        // Capture intended URL before OAuth redirect #191
+        // Use referer header or explicit redirect param to return user to their original page
+        $intendedUrl = request()->query('redirect')
+            ?? request()->headers->get('referer')
+            ?? route('shop.home.index');
+
+        // Only save if it's a valid URL on our domain (security)
+        $appUrl = config('app.url');
+        if ($intendedUrl && str_starts_with($intendedUrl, $appUrl)) {
+            session()->put('url.intended', $intendedUrl);
+        }
+
         try {
             return Socialite::driver($provider)->redirect();
         } catch (ConnectException $e) {
