@@ -138,7 +138,10 @@ class RamCartController extends APIController
     }
 
     /**
-     * Resolve customer or create if auto-provision data provided.
+     * Resolve customer or create if not found (auto-provision).
+     *
+     * Follows same pattern as OAuth flow - email is optional.
+     * @see CustomerSocialAccountRepository::findOrCreateCustomer
      */
     protected function resolveOrCreateCustomer(array $data): ?object
     {
@@ -148,14 +151,13 @@ class RamCartController extends APIController
             return $customer;
         }
 
-        if (empty($data['email'])) {
-            return null;
-        }
+        // Auto-provision: email is nullable (same as OAuth flow) #192
+        $email = !empty($data['email']) ? $data['email'] : null;
 
         $customer = $this->customerRepository->create([
             'first_name'        => $data['first_name'] ?? 'Usuario',
             'last_name'         => $data['last_name'] ?? 'RAM',
-            'email'             => $data['email'],
+            'email'             => $email,
             'password'          => bcrypt(bin2hex(random_bytes(16))),
             'channel_id'        => core()->getCurrentChannel()->id,
             'is_verified'       => 1,

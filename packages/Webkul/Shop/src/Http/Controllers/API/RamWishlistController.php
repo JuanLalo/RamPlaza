@@ -4,6 +4,7 @@ namespace Webkul\Shop\Http\Controllers\API;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 use Webkul\Customer\Repositories\CustomerRepository;
 use Webkul\Customer\Repositories\WishlistRepository;
 use Webkul\Product\Repositories\ProductRepository;
@@ -139,6 +140,9 @@ class RamWishlistController extends APIController
         }
 
         // Return full product details
+        // Force public APP_URL for generated URLs (internal Docker requests use different host)
+        URL::forceRootUrl(config('app.url'));
+
         $products = [];
         $publicUrl = rtrim(config('app.ram_public_url') ?? config('app.url'), '/');
         $appUrl = config('app.url');
@@ -190,7 +194,10 @@ class RamWishlistController extends APIController
     }
 
     /**
-     * Resolve customer or create if auto-provision data provided.
+     * Resolve customer or create if not found (auto-provision).
+     *
+     * Follows same pattern as OAuth flow - email is optional.
+     * @see CustomerSocialAccountRepository::findOrCreateCustomer
      */
     protected function resolveOrCreateCustomer(array $data): ?object
     {
@@ -200,14 +207,13 @@ class RamWishlistController extends APIController
             return $customer;
         }
 
-        if (empty($data['email'])) {
-            return null;
-        }
+        // Auto-provision: email is nullable (same as OAuth flow) #192
+        $email = !empty($data['email']) ? $data['email'] : null;
 
         $customer = $this->customerRepository->create([
             'first_name'        => $data['first_name'] ?? 'Usuario',
             'last_name'         => $data['last_name'] ?? 'RAM',
-            'email'             => $data['email'],
+            'email'             => $email,
             'password'          => bcrypt(bin2hex(random_bytes(16))),
             'channel_id'        => core()->getCurrentChannel()->id,
             'is_verified'       => 1,
