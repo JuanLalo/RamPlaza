@@ -91,6 +91,9 @@
 
         {!! view_render_event('bagisto.shop.layout.head.after') !!}
 
+        {{-- RAM Ecosystem Navigation Web Component #192 --}}
+        <script src="{{ config('services.ram.base_url', 'https://redactivamexico.net') }}/ram/components/ecosystem-nav/ecosystem-nav.js" defer></script>
+
     </head>
 
     <body>
@@ -147,7 +150,7 @@
             {!! view_render_event('bagisto.shop.layout.content.before') !!}
 
             <!-- Page Content Blade Component -->
-            <main id="main" class="bg-white dark:bg-ram-dark">
+            <main id="main" class="bg-white dark:bg-ram-dark max-lg:pb-16">
                 {{ $slot }}
             </main>
 
@@ -163,6 +166,9 @@
             @if ($hasFooter)
                 <x-shop::layouts.footer />
             @endif
+
+            <!-- RAM Ecosystem Navigation - Cross-App Navigation #192 -->
+            <x-shop::layouts.navbar-ecosystem />
         </div>
 
         {!! view_render_event('bagisto.shop.layout.body.after') !!}

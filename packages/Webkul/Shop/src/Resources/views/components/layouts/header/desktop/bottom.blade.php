@@ -23,6 +23,15 @@
 
         {!! view_render_event('bagisto.shop.components.layouts.header.desktop.bottom.logo.after') !!}
 
+        {{-- RAM Ecosystem Navigation - Web Component #192 --}}
+        {{-- Script loaded in main layout (index.blade.php) --}}
+        <ram-ecosystem-nav
+            variant="header"
+            active="plaza"
+            base-url="{{ config('services.ram.base_url', 'https://redactivamexico.net') }}"
+            plaza-url="{{ url('/') }}"
+        ></ram-ecosystem-nav>
+
         {!! view_render_event('bagisto.shop.components.layouts.header.desktop.bottom.category.before') !!}
 
         <v-desktop-category>
