@@ -68,6 +68,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | RAM Public URL
+    |--------------------------------------------------------------------------
+    |
+    | Public URL for RAM integration API responses. Used for product and image
+    | URLs that users will access in their browser. Falls back to APP_URL.
+    |
+    */
+
+    'ram_public_url' => env('RAM_PUBLIC_URL'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Admin URL
     |--------------------------------------------------------------------------
     |

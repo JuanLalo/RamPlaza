@@ -14,6 +14,7 @@ use Webkul\Shop\Http\Middleware\Currency;
 use Webkul\Shop\Http\Middleware\Locale;
 use Webkul\Shop\Http\Middleware\RamAutoLogin;
 use Webkul\Shop\Http\Middleware\Theme;
+use Webkul\Shop\Http\Middleware\ValidateRamServiceToken;
 
 class ShopServiceProvider extends ServiceProvider
 {
@@ -42,9 +43,13 @@ class ShopServiceProvider extends ServiceProvider
         $router->aliasMiddleware('currency', Currency::class);
         $router->aliasMiddleware('cache.response', CacheResponse::class);
         $router->aliasMiddleware('customer', AuthenticateCustomer::class);
+        $router->aliasMiddleware('ram.service.token', ValidateRamServiceToken::class);
 
         Route::middleware(['web', 'shop', PreventRequestsDuringMaintenance::class])->group(__DIR__.'/../Routes/web.php');
         Route::middleware(['web', 'shop', PreventRequestsDuringMaintenance::class])->group(__DIR__.'/../Routes/api.php');
+
+        // RAM Integration APIs - stateless, no CSRF #192
+        Route::middleware(['api'])->group(__DIR__.'/../Routes/ram-api.php');
 
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
 
